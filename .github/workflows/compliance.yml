@@ -1,0 +1,95 @@
+name: Platform Compliance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: MIT License
+        run: grep -qi "MIT" LICENSE
+
+      - name: No .env.production in repo
+        run: test ! -f .env.production && test ! -f web/.env.production
+
+      - name: No tracking
+        run: |
+          # Match real tracking SDK usage, not bare English words. "amplitude"
+          # (audio), "segment" (geometry) and "track" are legitimate game code;
+          # flag only actual analytics calls/hosts in source + tracking deps.
+          SRC="google-analytics\.com|googletagmanager|gtag[[:space:]]*\(|mixpanel|segment\.(com|io)|segmentio|hotjar|plausible\.io|posthog|amplitude\.(com|getInstance|init)"
+          ! grep -rE "$SRC" web/src/ 2>/dev/null
+          PKG="mixpanel|posthog-js|@amplitude/|amplitude-js|@segment/|analytics-node|plausible-tracker|react-ga|@hotjar|hotjar-browser|google-analytics"
+          ! grep -E "\"($PKG)" web/package.json 2>/dev/null
+
+      - name: Brand fonts
+        run: |
+          CSS_FILE=$(find web/src -name "index.css" | head -1)
+          grep -qi "manrope" "$CSS_FILE"
+          grep -qi "fraunces" "$CSS_FILE"
+
+      - name: CSS variables
+        run: |
+          CSS_FILE=$(find web/src -name "index.css" | head -1)
+          grep -q "\-\-paper" "$CSS_FILE"
+          grep -q "\-\-ink" "$CSS_FILE"
+          grep -q "\-\-accent" "$CSS_FILE"
+
+      - name: HTML meta tags
+        run: |
+          grep -q 'lang=' web/index.html
+          grep -q 'viewport' web/index.html
+          grep -q '<title>' web/index.html
+
+      - name: PWA manifest
+        run: |
+          MANIFEST=$(find web/dist -name "manifest.webmanifest" -o -name "manifest.json" | head -1)
+          test -n "$MANIFEST"
+          grep -q "name" "$MANIFEST"
+          grep -q "display" "$MANIFEST"
+          grep -q "start_url" "$MANIFEST"
+
+      - name: PWA meta tags
+        run: |
+          grep -qi "apple-mobile-web-app-capable\|mobile-web-app-capable" web/index.html
+
+      - name: FreeGameStore link
+        # The link is rendered by the @freegamestore/games SDK (GameShell), so it
+        # lives in the built bundle, not web/src. Check web/dist (built above).
+        run: grep -rq "freegamestore.online" web/dist/
+
+      - name: Dark mode
+        run: grep -rE "prefers-color-scheme|data-theme|color-scheme" web/src/ | grep -q .
+
+      - name: pnpm workspace
+        run: |
+          grep -q "pnpm" package.json
+          test -f pnpm-workspace.yaml
+
+      - name: Bundle size
+        run: |
+          BUNDLE=$(find web/dist -name "*.js" -path "*/assets/*" | sort -rn | head -1)
+          if [ -n "$BUNDLE" ]; then
+            GZIP_SIZE=$(gzip -c "$BUNDLE" | wc -c)
+            echo "Bundle gzipped: $((GZIP_SIZE / 1024))KB"
+            test "$GZIP_SIZE" -lt 307200
+          fi
