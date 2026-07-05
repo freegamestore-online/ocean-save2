@@ -1,14 +1,14 @@
 {
-  "name": "APPNAME",
+  "name": "ocean-save2",
   "private": true,
   "packageManager": "pnpm@10.30.3",
   "engines": { "node": ">=22" },
   "pnpm": { "onlyBuiltDependencies": ["esbuild"] },
   "scripts": {
-    "dev": "pnpm --filter @APPNAME/web dev",
-    "build": "pnpm --filter @APPNAME/web build",
-    "preview": "pnpm --filter @APPNAME/web preview",
-    "typecheck": "pnpm --filter @APPNAME/web exec tsc -b",
-    "test": "pnpm --filter @APPNAME/web test"
+    "dev": "pnpm --filter @ocean-save2/web dev",
+    "build": "pnpm --filter @ocean-save2/web build",
+    "preview": "pnpm --filter @ocean-save2/web preview",
+    "typecheck": "pnpm --filter @ocean-save2/web exec tsc -b",
+    "test": "pnpm --filter @ocean-save2/web test"
   }
 }

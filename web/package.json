@@ -1,5 +1,5 @@
 {
-  "name": "@APPNAME/web",
+  "name": "@ocean-save2/web",
   "private": true,
   "type": "module",
   "scripts": {
