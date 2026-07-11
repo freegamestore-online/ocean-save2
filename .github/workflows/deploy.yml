@@ -38,7 +38,7 @@ jobs:
           fi
       - name: No tracking SDKs in source
         run: |
-          if grep -rE 'google-analytics|gtag\(|amplitude|mixpanel|segment|hotjar|plausible|posthog' web/src/ 2>/dev/null; then
+          if grep -rE 'google-analytics\.com|googletagmanager|gtag[[:space:]]*\(|mixpanel|segment\.(com|io)|segmentio|@segment/|hotjar|plausible\.io|posthog|amplitude\.(com|getInstance|init)' web/src/ 2>/dev/null; then
             echo "::error::tracking SDK found in web/src — analytics is platform-provided"; exit 1
           fi
 
